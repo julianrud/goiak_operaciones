@@ -487,14 +487,26 @@ function toISO(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'
 let cards = [];
 
 // ─── FIREBASE LISTENER — sincronización en tiempo real ───
-async function initFirebase(){
+function hideLoader(){ 
+  const ls=document.getElementById('loading-screen');
+  if(ls) ls.style.display='none';
+}
+
+function initFirebase(){
+  // Timeout de seguridad: si Firebase no responde en 6s, muestra el tablero vacío igual
+  const fallback = setTimeout(()=>{ hideLoader(); render(); }, 6000);
+
   db.collection(COLLECTION).onSnapshot(snapshot=>{
+    clearTimeout(fallback);
     cards = snapshot.docs.map(doc=>({...doc.data(), id: doc.id}));
     render();
-    document.getElementById('loading-screen').style.display='none';
+    hideLoader();
   }, err=>{
+    clearTimeout(fallback);
     console.error('Firebase error:', err);
-    document.getElementById('loading-screen').innerHTML='<div style="font-size:14px;color:#c83030;font-family:DM Sans,sans-serif;padding:24px;text-align:center">Error al conectar con Firebase.<br>Verificá la configuración del proyecto.</div>';
+    hideLoader();
+    render();
+    showToast('Error Firebase: ' + err.code);
   });
 }
 
