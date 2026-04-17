@@ -488,7 +488,6 @@ let cards = [];
 
 // ─── FIREBASE LISTENER — sincronización en tiempo real ───
 async function initFirebase(){
-  await seedIfEmpty();
   db.collection(COLLECTION).onSnapshot(snapshot=>{
     cards = snapshot.docs.map(doc=>({...doc.data(), id: doc.id}));
     render();
@@ -721,15 +720,15 @@ function renderKanban(){
           '<div><div class="field-label">Responsable</div><div class="field-value">'+card.owner+'</div></div>'+
           '<div><div class="field-label">Entrega</div><div class="field-value'+(card.urgent?' urgent':'')+'">'+dStr+'</div></div>'+
         '</div>'+
-        '<button class="detail-toggle'+(isOpen?' open':'')+'" data-id="'+card.id+'" onclick="toggleDetail('+card.id+',event)">'+
+        '<button class="detail-toggle'+(isOpen?' open':'')+'" data-id="'+card.id+'" onclick="toggleDetail('"+card.id+"',event)">'+
           '<span class="detail-arrow">&#9658;</span> <span class="detail-lbl" data-id="'+card.id+'">'+(isOpen?'Ocultar detalle':'Ver detalle')+'</span>'+
         '</button>'+
         '<div class="detail-body'+(isOpen?' open':'')+'" data-id="'+card.id+'"><div class="detail-inner">'+(hasDetail?card.detail:'<span class="detail-empty">Sin descripción.</span>')+'</div></div>'+
         '<div class="card-actions">'+
-          (prv?'<button class="move-btn" onclick="moveCard('+card.id+',\''+prv+'\',event)">'+PL[card.col]+'</button>':'')+
-          (nxt?'<button class="move-btn" onclick="moveCard('+card.id+',\''+nxt+'\',event)">'+NL[card.col]+'</button>':'')+
-          '<button class="edit-btn" onclick="openEdit('+card.id+',event)">Editar</button>'+
-          '<button class="del-btn" onclick="deleteCard('+card.id+',event)">✕</button>'+
+          (prv?'<button class="move-btn" onclick="moveCard(\''+card.id+'\',\''+prv+'\',event)">'+PL[card.col]+'</button>':'')+
+          (nxt?'<button class="move-btn" onclick="moveCard(\''+card.id+'\',\''+nxt+'\',event)">'+NL[card.col]+'</button>':'')+
+          '<button class="edit-btn" onclick="openEdit(\''+card.id+'\',event)">Editar</button>'+
+          '<button class="del-btn" onclick="deleteCard(\''+card.id+'\',event)">✕</button>'+
         '</div>';
       div.appendChild(cdiv);
     });
@@ -775,7 +774,7 @@ function renderCalendar(){
     dayTasks.slice(0,3).forEach(card=>{
       const t=document.createElement('div');t.className='cal-task '+AM[card.area].tcls;
       t.title=card.title+' — '+card.owner;t.textContent=card.title;
-      t.onclick=e=>{e.stopPropagation();openEdit(card.id,e);};cell.appendChild(t);
+      t.onclick=e=>{e.stopPropagation();openEdit(String(card.id),e);};cell.appendChild(t);
     });
     if(dayTasks.length>3){const more=document.createElement('div');more.className='cal-more';more.textContent='+'+(dayTasks.length-3)+' más';cell.appendChild(more);}
     grid.appendChild(cell);
@@ -796,7 +795,7 @@ function renderUpcoming(){
     else if(diff===0){cls='today-lbl';lbl='Hoy — '+lbl;}
     else if(diff<=3){cls='soon';lbl='En '+diff+' días — '+lbl;}
     const div=document.createElement('div');div.className='cal-side-card';
-    div.onclick=e=>openEdit(card.id,e);
+    div.onclick=e=>openEdit(String(card.id),e);
     div.innerHTML='<span class="area-pill '+AM[card.area].cls+'" style="font-size:10px;margin-bottom:5px;display:inline-block">'+AM[card.area].label+'</span>'+
       '<div class="card-title" style="font-size:12px;margin-bottom:5px">'+card.title+'</div>'+
       '<div class="cal-side-date '+cls+'">'+lbl+'</div>'+
@@ -854,7 +853,7 @@ function openAdd(col){
 }
 function openEdit(id,e){
   if(e)e.stopPropagation();editingId=id;
-  const c=cards.find(c=>c.id===id);
+  const c=cards.find(c=>String(c.id)===String(id));
   document.getElementById('modal-title').textContent='Editar tarea';
   document.getElementById('f-title').value=c.title;
   document.getElementById('f-detail').value=c.detail||'';
