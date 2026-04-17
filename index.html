@@ -492,17 +492,21 @@ function hideLoader(){
   if(ls) ls.style.display='none';
 }
 
-function initFirebase(){
-  // Timeout de seguridad: si Firebase no responde en 6s, muestra el tablero vacío igual
-  const fallback = setTimeout(()=>{ hideLoader(); render(); }, 6000);
+async function initFirebase(){
+  try {
+    // Crea un doc de control para garantizar que la colección existe
+    // Firestore no dispara onSnapshot en colecciones vacías/inexistentes
+    await db.collection(COLLECTION).doc('__init__').set({ ok: true }, { merge: true });
+  } catch(e){ console.warn('init doc:', e); }
 
   db.collection(COLLECTION).onSnapshot(snapshot=>{
-    clearTimeout(fallback);
-    cards = snapshot.docs.map(doc=>({...doc.data(), id: doc.id}));
+    // Filtra el doc de control interno
+    cards = snapshot.docs
+      .filter(doc => doc.id !== '__init__')
+      .map(doc => ({...doc.data(), id: doc.id}));
     render();
     hideLoader();
   }, err=>{
-    clearTimeout(fallback);
     console.error('Firebase error:', err);
     hideLoader();
     render();
