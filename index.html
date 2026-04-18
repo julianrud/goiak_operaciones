@@ -773,9 +773,10 @@ function saveCard(){
     area:   document.getElementById('fa').value,
     prio:   document.getElementById('fp').value,
   };
+  const currentEditId = editId; // guardar antes de que closeModal lo limpie
   closeModal();
-  if(editId){
-    fbUpdate(editId, data)
+  if(currentEditId){
+    fbUpdate(currentEditId, data)
       .then(()=>toast('Tarea actualizada'))
       .catch(err=>toast('Error: '+err.message));
   } else {
