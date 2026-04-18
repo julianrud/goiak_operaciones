@@ -397,46 +397,7 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-const COLLECTION = 'tareas';
-
-const SEED_CARDS = [
-  {id:'1', title:'Seguimiento de leads de la semana',detail:'Revisar el CRM con los contactos ingresados esta semana. Llamar a los que tienen más de 3 días sin respuesta. Registrar resultado en planilla de seguimiento.',area:'ventas',prio:'alta', owner:'Coord. Ventas',  date:'2026-04-20',col:'todo'},
-  {id:'2', title:'Revisar cuota de altas y bajas del mes',detail:'Comparar altas vs bajas del mes corriente contra el mes anterior. Identificar si la tasa de cancelación supera el 5% y reportar a gerencia con análisis de motivos.',area:'ventas',prio:'alta', owner:'Coord. Ventas',  date:'2026-04-25',col:'todo'},
-  {id:'3', title:'Armar propuesta de convenio corporativo',detail:'Preparar propuesta para empresa del Puerto. Incluir beneficios escalonados según cantidad de empleados. Usar plantilla de convenios vigente.',area:'ventas',prio:'media',owner:'Coord. Ventas',  date:'2026-04-30',col:'todo'},
-  {id:'4', title:'Publicar contenido semanal en Instagram',detail:'Programar 4 posts: lunes motivacional, miércoles clase destacada, viernes oferta, domingo testimonio de socio. Usar Canva con plantillas aprobadas.',area:'mkt',  prio:'alta', owner:'Coord. Mkt',     date:'2026-04-19',col:'todo',urgent:true},
-  {id:'5', title:'Campaña de reactivación de socios inactivos',detail:'Filtrar socios sin asistencia en los últimos 45 días. Enviar WhatsApp personalizado con oferta de reactivación. Registrar respuestas en CRM.',area:'mkt',  prio:'alta', owner:'Coord. Mkt',     date:'2026-04-28',col:'todo'},
-  {id:'6', title:'Actualizar perfil en Google y Wellhub',detail:'Verificar horarios, fotos y descripción en Google Business. En Wellhub actualizar disponibilidad de clases y precio de membresía vigente.',area:'mkt',  prio:'media',owner:'Coord. Mkt',     date:'2026-04-22',col:'todo'},
-  {id:'7', title:'Capacitación en protocolo de bienvenida',detail:'Reunión con equipo de recepción. Repasar protocolo de los primeros 3 minutos con socio nuevo.',area:'serv', prio:'alta', owner:'Coord. Servicio',date:'2026-04-21',col:'doing'},
-  {id:'8', title:'Relevamiento de satisfacción de socios',detail:'Encuesta de 5 preguntas a socios con más de 3 meses de antigüedad. Google Forms. Meta: 40 respuestas mínimo.',area:'serv', prio:'media',owner:'Coord. Servicio',date:'2026-04-30',col:'doing'},
-  {id:'9', title:'Revisión de cinta cardio n°3',detail:'La cinta presenta ruido en la banda a velocidades altas. Revisar tensión y lubricación. Si requiere repuesto, cotización urgente.',area:'mant', prio:'alta', owner:'Mantenimiento',  date:'2026-04-19',col:'doing',urgent:true},
-  {id:'10',title:'Limpieza profunda vestuarios — turno tarde',detail:'Desinfección completa de duchas, sanitarios y lockers. Reposición de jabón y papel. Completar checklist y firmarlo.',area:'mant', prio:'alta', owner:'Limpieza',        date:'2026-04-20',col:'doing'},
-  {id:'11',title:'Incorporación de nuevo instructor de clases',detail:'Onboarding de nuevo instructor de ciclo indoor. Presentar al equipo, asignar casillero y accesos, explicar protocolo.',area:'ch',   prio:'media',owner:'Coord. CH',       date:'2026-04-25',col:'doing'},
-  {id:'12',title:'Cierre de caja y conciliación bancaria abril',detail:'Cuadrar ingresos de membresías, cobros manuales y pagos por Wellhub. Conciliar con extracto bancario.',area:'adm',  prio:'alta', owner:'Adm. y Finanzas', date:'2026-04-30',col:'doing'},
-  {id:'13',title:'Cotización de nuevo equipamiento cardio',detail:'Solicitar presupuesto a al menos 2 proveedores para 2 cintas y 1 bicicleta estática.',area:'mant', prio:'media',owner:'Gerencia',        date:'2026-05-05',col:'waiting'},
-  {id:'14',title:'Aprobación de grilla de clases mayo',detail:'La propuesta de grilla fue enviada el 15/04. Requiere aprobación de dirección.',area:'serv', prio:'media',owner:'Gerencia',        date:'2026-05-02',col:'waiting'},
-  {id:'15',title:'Resultado de evaluación de desempeño Q1',detail:'Evaluaciones completadas. Esperando procesamiento y elaboración de informe consolidado por RRHH externo.',area:'ch',   prio:'baja', owner:'Coord. CH',       date:'2026-05-10',col:'waiting'},
-  {id:'16',title:'Informe de morosidad y renovaciones pendientes',detail:'Listado de socios con más de 10 días de atraso. Clasificar por monto y tiempo de mora.',area:'adm',  prio:'alta', owner:'Adm. y Finanzas', date:'2026-04-28',col:'waiting'},
-  {id:'17',title:'Presupuesto operativo mayo',detail:'Proyectar gastos fijos y variables. Comparar con ejecución de abril. Elevar para aprobación antes del 28/04.',area:'adm',  prio:'media',owner:'Adm. y Finanzas', date:'2026-04-28',col:'waiting'},
-  {id:'18',title:'Protocolo de limpieza actualizado y distribuido',detail:'Se actualizó frecuencia de desinfección a 2 veces por turno. Documento entregado al equipo.',area:'mant', prio:'baja', owner:'Mantenimiento',  date:'',col:'done'},
-  {id:'19',title:'Grilla de clases de abril publicada',detail:'Grilla publicada en Instagram, WhatsApp de socios y cartelería interna.',area:'serv', prio:'media',owner:'Coord. Servicio',date:'',col:'done'},
-  {id:'20',title:'Onboarding socios nuevos de marzo completado',detail:'23 socios nuevos completaron su evaluación inicial. Tasa de completitud: 92%.',area:'ch',   prio:'media',owner:'Coord. CH',       date:'',col:'done'},
-  {id:'21',title:'Liquidación de sueldos marzo cerrada',detail:'Liquidación procesada para 18 empleados. Transferencias realizadas el 5/04.',area:'adm',  prio:'baja', owner:'Adm. y Finanzas', date:'',col:'done'},
-  {id:'22',title:'Diseño de promo mes de mayo',detail:'Crear campaña visual para promo de Día de la Madre. Incluir post, story y banner.',area:'mkt',  prio:'media',owner:'Coord. Mkt',     date:'2026-04-28',col:'todo'},
-  {id:'23',title:'Evaluación de clima laboral Q1',detail:'Encuesta anónima de 10 preguntas al equipo completo. Procesar en semana del 28/04.',area:'ch',   prio:'media',owner:'Coord. CH',       date:'2026-04-30',col:'todo'},
-  {id:'24',title:'Plan de mantenimiento preventivo mayo',detail:'Revisar y calendarizar mantenimiento de equipos de cardio, pesas y climatización.',area:'mant', prio:'baja', owner:'Mantenimiento',  date:'2026-04-30',col:'todo'},
-];
-
-async function seedIfEmpty(){
-  const snap = await db.collection(COLLECTION).limit(1).get();
-  if(snap.empty){
-    const batch = db.batch();
-    SEED_CARDS.forEach(card=>{
-      const ref = db.collection(COLLECTION).doc(card.id);
-      batch.set(ref, card);
-    });
-    await batch.commit();
-  }
-}
+const COL = 'tareas';
 
 const MONTHS=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const DAYS_ES=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
@@ -478,48 +439,27 @@ function toISO(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'
 
 let cards = [];
 
-// ─── STORAGE: localStorage + Firebase sync ───
-const LS_KEY = 'goiak_cards_v2';
-
-function saveLocal(){
-  try{ localStorage.setItem(LS_KEY, JSON.stringify(cards)); }catch(e){}
-}
-
-function loadLocal(){
-  try{
-    const d = localStorage.getItem(LS_KEY);
-    if(d){ cards = JSON.parse(d); return true; }
-  }catch(e){}
-  return false;
-}
-
-function initFirebase(){
-  // 1. Carga inmediata desde localStorage — sin esperar red
-  loadLocal();
-  render();
-
-  // 2. Firebase sync en background — si conecta, actualiza
-  try {
-    db.collection(COLLECTION).onSnapshot(snapshot=>{
-      const fbCards = snapshot.docs
-        .filter(d => d.id !== 'init' && d.id !== '__init__')
-        .map(d => ({...d.data(), id: d.id}));
-
-      // Solo actualiza si Firebase tiene datos o confirmó que está vacío
-      if(!snapshot.metadata.fromCache){
-        cards = fbCards;
-        saveLocal();
+function initApp(){
+  // get() funciona aunque la colección esté vacía — a diferencia de onSnapshot
+  db.collection(COL).get()
+    .then(snapshot=>{
+      cards = snapshot.docs
+        .filter(d=>d.id!=='init')
+        .map(d=>({...d.data(), id:d.id}));
+      render();
+      // Después de la carga inicial, activa el listener en tiempo real
+      db.collection(COL).onSnapshot(snap=>{
+        cards = snap.docs
+          .filter(d=>d.id!=='init')
+          .map(d=>({...d.data(), id:d.id}));
         render();
-        if(fbCards.length > 0){
-          showToast('Sincronizado ✓');
-        }
-      }
-    }, err=>{
-      console.warn('Firebase no disponible, modo local:', err.code);
+      }, ()=>{});
+    })
+    .catch(err=>{
+      console.warn('Firebase error:', err);
+      cards = [];
+      render();
     });
-  } catch(e){
-    console.warn('Firebase error:', e);
-  }
 }
 
 // ─── VIEW ───
@@ -855,17 +795,16 @@ function renderStats(){
 // ─── CRUD ───
 function moveCard(id,toCol,e){
   e.stopPropagation();
-  const c=cards.find(c=>String(c.id)===String(id));
-  if(c){ c.col=toCol; saveLocal(); render(); showToast('Tarea movida'); }
-  try{ db.collection(COLLECTION).doc(String(id)).update({col:toCol}).catch(()=>{}); }catch(e){}
+  db.collection(COL).doc(String(id)).update({col:toCol})
+    .then(()=>showToast('Tarea movida'))
+    .catch(e=>showToast('Error: '+e.message));
 }
 function deleteCard(id,e){
   e.stopPropagation();
   if(!confirm('¿Eliminar esta tarea?')) return;
-  cards = cards.filter(c=>String(c.id)!==String(id));
-  expandedCards.delete(id);
-  saveLocal(); render(); showToast('Tarea eliminada');
-  try{ db.collection(COLLECTION).doc(String(id)).delete().catch(()=>{}); }catch(e){}
+  db.collection(COL).doc(String(id)).delete()
+    .then(()=>{ expandedCards.delete(id); showToast('Tarea eliminada'); })
+    .catch(e=>showToast('Error: '+e.message));
 }
 function openAdd(col){
   editingId=null;addingToCol=col;
@@ -899,16 +838,14 @@ function saveCard(){
   const prio=document.getElementById('f-prio').value;
   closeModal();
   if(editingId){
-    const c=cards.find(c=>String(c.id)===String(editingId));
-    if(c) Object.assign(c,{title,detail,owner,date,area,prio});
-    saveLocal(); render(); showToast('Tarea actualizada');
-    try{ db.collection(COLLECTION).doc(String(editingId)).update({title,detail,owner,date,area,prio}).catch(()=>{}); }catch(e){}
+    db.collection(COL).doc(String(editingId)).update({title,detail,owner,date,area,prio})
+      .then(()=>showToast('Tarea actualizada'))
+      .catch(e=>showToast('Error: '+e.message));
   } else {
     const newId = String(Date.now());
-    const newCard = {id:newId,title,detail,area,prio,owner,date,col:addingToCol,urgent:false};
-    cards.push(newCard);
-    saveLocal(); render(); showToast('Tarea agregada');
-    try{ db.collection(COLLECTION).doc(newId).set(newCard).catch(()=>{}); }catch(e){}
+    db.collection(COL).doc(newId).set({id:newId,title,detail,area,prio,owner,date,col:addingToCol,urgent:false})
+      .then(()=>showToast('Tarea agregada'))
+      .catch(e=>showToast('Error: '+e.message));
   }
 }
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);}
@@ -916,7 +853,7 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
 document.getElementById('overlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 
-initFirebase();
+initApp();
 </script>
 </body>
 </html>
