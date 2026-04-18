@@ -385,14 +385,6 @@ textarea.form-input{resize:vertical;min-height:80px;line-height:1.55}
 
 <div class="toast" id="toast"></div>
 
-<!-- Loading overlay -->
-<div id="loading-screen" style="position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px">
-  <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:28px;letter-spacing:.1em">GOIAK</div>
-  <div style="font-size:13px;color:var(--muted);font-family:'DM Mono',monospace">Conectando con la base de datos...</div>
-  <div style="width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--text);border-radius:50%;animation:spin .7s linear infinite"></div>
-  <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
-</div>
-
 <script>
 // ─── FIREBASE INIT ───
 const firebaseConfig = {
@@ -486,32 +478,48 @@ function toISO(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'
 
 let cards = [];
 
-// ─── FIREBASE LISTENER — sincronización en tiempo real ───
-function hideLoader(){ 
-  const ls=document.getElementById('loading-screen');
-  if(ls) ls.style.display='none';
+// ─── STORAGE: localStorage + Firebase sync ───
+const LS_KEY = 'goiak_cards_v2';
+
+function saveLocal(){
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(cards)); }catch(e){}
 }
 
-async function initFirebase(){
-  try {
-    // Crea un doc de control para garantizar que la colección existe
-    // Firestore no dispara onSnapshot en colecciones vacías/inexistentes
-    await db.collection(COLLECTION).doc('__init__').set({ ok: true }, { merge: true });
-  } catch(e){ console.warn('init doc:', e); }
+function loadLocal(){
+  try{
+    const d = localStorage.getItem(LS_KEY);
+    if(d){ cards = JSON.parse(d); return true; }
+  }catch(e){}
+  return false;
+}
 
-  db.collection(COLLECTION).onSnapshot(snapshot=>{
-    // Filtra el doc de control interno
-    cards = snapshot.docs
-      .filter(doc => doc.id !== '__init__')
-      .map(doc => ({...doc.data(), id: doc.id}));
-    render();
-    hideLoader();
-  }, err=>{
-    console.error('Firebase error:', err);
-    hideLoader();
-    render();
-    showToast('Error Firebase: ' + err.code);
-  });
+function initFirebase(){
+  // 1. Carga inmediata desde localStorage — sin esperar red
+  loadLocal();
+  render();
+
+  // 2. Firebase sync en background — si conecta, actualiza
+  try {
+    db.collection(COLLECTION).onSnapshot(snapshot=>{
+      const fbCards = snapshot.docs
+        .filter(d => d.id !== 'init' && d.id !== '__init__')
+        .map(d => ({...d.data(), id: d.id}));
+
+      // Solo actualiza si Firebase tiene datos o confirmó que está vacío
+      if(!snapshot.metadata.fromCache){
+        cards = fbCards;
+        saveLocal();
+        render();
+        if(fbCards.length > 0){
+          showToast('Sincronizado ✓');
+        }
+      }
+    }, err=>{
+      console.warn('Firebase no disponible, modo local:', err.code);
+    });
+  } catch(e){
+    console.warn('Firebase error:', e);
+  }
 }
 
 // ─── VIEW ───
@@ -847,16 +855,17 @@ function renderStats(){
 // ─── CRUD ───
 function moveCard(id,toCol,e){
   e.stopPropagation();
-  db.collection(COLLECTION).doc(String(id)).update({col:toCol})
-    .then(()=>showToast('Tarea movida'))
-    .catch(err=>showToast('Error: '+err.message));
+  const c=cards.find(c=>String(c.id)===String(id));
+  if(c){ c.col=toCol; saveLocal(); render(); showToast('Tarea movida'); }
+  try{ db.collection(COLLECTION).doc(String(id)).update({col:toCol}).catch(()=>{}); }catch(e){}
 }
 function deleteCard(id,e){
   e.stopPropagation();
   if(!confirm('¿Eliminar esta tarea?')) return;
-  db.collection(COLLECTION).doc(String(id)).delete()
-    .then(()=>{expandedCards.delete(id);showToast('Tarea eliminada');})
-    .catch(err=>showToast('Error: '+err.message));
+  cards = cards.filter(c=>String(c.id)!==String(id));
+  expandedCards.delete(id);
+  saveLocal(); render(); showToast('Tarea eliminada');
+  try{ db.collection(COLLECTION).doc(String(id)).delete().catch(()=>{}); }catch(e){}
 }
 function openAdd(col){
   editingId=null;addingToCol=col;
@@ -890,14 +899,16 @@ function saveCard(){
   const prio=document.getElementById('f-prio').value;
   closeModal();
   if(editingId){
-    db.collection(COLLECTION).doc(String(editingId)).update({title,detail,owner,date,area,prio})
-      .then(()=>showToast('Tarea actualizada'))
-      .catch(err=>showToast('Error: '+err.message));
+    const c=cards.find(c=>String(c.id)===String(editingId));
+    if(c) Object.assign(c,{title,detail,owner,date,area,prio});
+    saveLocal(); render(); showToast('Tarea actualizada');
+    try{ db.collection(COLLECTION).doc(String(editingId)).update({title,detail,owner,date,area,prio}).catch(()=>{}); }catch(e){}
   } else {
     const newId = String(Date.now());
-    db.collection(COLLECTION).doc(newId).set({id:newId,title,detail,area,prio,owner,date,col:addingToCol,urgent:false})
-      .then(()=>showToast('Tarea agregada'))
-      .catch(err=>showToast('Error: '+err.message));
+    const newCard = {id:newId,title,detail,area,prio,owner,date,col:addingToCol,urgent:false};
+    cards.push(newCard);
+    saveLocal(); render(); showToast('Tarea agregada');
+    try{ db.collection(COLLECTION).doc(newId).set(newCard).catch(()=>{}); }catch(e){}
   }
 }
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);}
