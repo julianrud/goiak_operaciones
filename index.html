@@ -765,7 +765,12 @@ function closeModal(){
 function saveCard(){
   const title=document.getElementById('ft').value.trim();
   if(!title){ document.getElementById('ft').focus(); return; }
-  const data={
+
+  const isEdit = !!editId;
+  const docId  = editId || String(Date.now());
+
+  const data = {
+    id:     docId,
     title,
     detail: document.getElementById('fd').value.trim(),
     owner:  document.getElementById('fo').value.trim()||'—',
@@ -773,18 +778,17 @@ function saveCard(){
     area:   document.getElementById('fa').value,
     prio:   document.getElementById('fp').value,
   };
-  const currentEditId = editId; // guardar antes de que closeModal lo limpie
-  closeModal();
-  if(currentEditId){
-    fbUpdate(currentEditId, data)
-      .then(()=>toast('Tarea actualizada'))
-      .catch(err=>toast('Error: '+err.message));
-  } else {
-    const id=String(Date.now());
-    fbSet(id, {...data, id, col:addCol, urgent:false})
-      .then(()=>toast('Tarea agregada'))
-      .catch(err=>toast('Error: '+err.message));
+
+  if(!isEdit){
+    data.col    = addCol;
+    data.urgent = false;
   }
+
+  closeModal();
+
+  db.collection(COL).doc(docId).set(data, {merge:true})
+    .then(()=>toast(isEdit ? 'Tarea actualizada ✓' : 'Tarea agregada ✓'))
+    .catch(err=>toast('Error: '+err.message));
 }
 
 function toast(msg){
